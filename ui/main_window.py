@@ -12,7 +12,7 @@ from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from datetime import datetime, timedelta
 
 from database import Database
-from ui.dialogs import EditTaskDialog, SummaryDialog
+from ui.dialogs import EditTaskDialog, SummaryDialog, CustomRangeSummaryDialog
 from ui.styles import get_stylesheet
 
 
@@ -121,6 +121,11 @@ class TimePunchWindow(QMainWindow):
 		monthly_btn.setMinimumHeight(50)
 		monthly_btn.clicked.connect(self.show_monthly_summary)
 		summary_layout.addWidget(monthly_btn)
+		
+		custom_btn = QPushButton("Custom Range")
+		custom_btn.setMinimumHeight(50)
+		custom_btn.clicked.connect(self.show_custom_summary)
+		summary_layout.addWidget(custom_btn)
 		
 		left_layout.addLayout(summary_layout)
 		
@@ -279,12 +284,12 @@ class TimePunchWindow(QMainWindow):
 			
 			# Start time
 			start = datetime.fromisoformat(task[3])
-			self.history_table.setItem(row, 2, QTableWidgetItem(start.strftime("%m/%d %H:%M")))
+			self.history_table.setItem(row, 2, QTableWidgetItem(start.strftime("%d/%m %H:%M")))
 			
 			# End time
 			if task[4]:
 				end = datetime.fromisoformat(task[4])
-				self.history_table.setItem(row, 3, QTableWidgetItem(end.strftime("%m/%d %H:%M")))
+				self.history_table.setItem(row, 3, QTableWidgetItem(end.strftime("%d/%m %H:%M")))
 			else:
 				self.history_table.setItem(row, 3, QTableWidgetItem("Running..."))
 			
@@ -446,3 +451,15 @@ class TimePunchWindow(QMainWindow):
 		summary = self.generate_summary(month_start, today.isoformat(), "Monthly Summary")
 		dialog = SummaryDialog("Monthly Summary", summary, self)
 		dialog.exec()
+	
+	def show_custom_summary(self):
+		"""Show custom date range summary"""
+		dialog = CustomRangeSummaryDialog(self)
+		if dialog.exec():
+			start_date, end_date = dialog.get_date_range()
+			month_name = dialog.month_combo.currentText()
+			year = dialog.year_combo.currentText()
+			title = f"Summary for {month_name} {year}"
+			summary = self.generate_summary(start_date, end_date, title)
+			result_dialog = SummaryDialog(title, summary, self)
+			result_dialog.exec()
